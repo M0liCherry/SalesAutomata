@@ -2,6 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
+import { AuthProvider } from "./lib/auth";
+import { ToastProvider } from "./lib/toast";
+import "./styles/globals.css";
 
 const container = document.getElementById("root");
 
@@ -11,6 +14,10 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ToastProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ToastProvider>
   </StrictMode>,
 );

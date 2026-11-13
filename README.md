@@ -15,7 +15,7 @@
 
 | Layer | Stack | Role |
 | --- | --- | --- |
-| Frontend | React + TypeScript + Vite | Plain HTML data browser. No CSS. |
+| Frontend | React + TypeScript + Vite | Sales workspace: dashboard, lead pipeline, lead 360 view and WhatsApp inbox. Uses Supabase Auth. |
 | Backend | Rust + Axum | Read-only JSON API over Supabase. |
 | Database | Supabase Postgres | Leads, properties, projects, agents, conversations, messages, appointments, follow-ups, activities and templates. |
 
@@ -28,6 +28,7 @@ the browser.
 - Rust toolchain (`cargo`)
 - Node.js 20+ (`npm`)
 - Supabase project URL and `service_role` key
+- Supabase Auth project URL and `anon`/publishable key (frontend sign-in)
 
 ## Run
 
@@ -54,6 +55,10 @@ Frontend: http://localhost:5173
 
 The frontend defaults to `http://localhost:8080` for the API. Override it with
 `VITE_API_URL` if the backend runs elsewhere.
+
+Copy `frontend/.env.example` to `frontend/.env` and set the Supabase Auth values
+to enable the login screen. If they are missing, the app starts in demo mode
+without a login gate so the UI can still be reviewed.
 
 ## Backend API
 
@@ -85,25 +90,33 @@ All endpoints are `GET` and return JSON. List endpoints support `limit`,
 
 | Route | Page |
 | --- | --- |
-| `/` | Dashboard summary and recent leads |
-| `/leads` | Leads list |
-| `/leads/{id}` | Lead detail with related records |
-| `/properties` | Properties list |
+| `/` | Sales command centre: KPIs, funnel, agenda and recent leads |
+| `/analytics` | Pipeline, source, city, agent, trend and SLA reporting |
+| `/inbox` | WhatsApp inbox and conversation view |
+| `/inbox/{id}` | Selected conversation thread |
+| `/leads` | Lead pipeline (kanban) and list view |
+| `/leads/{id}` | Lead 360: qualification, timeline, chat, appointments and property matches |
+| `/properties` | Property catalog with filters, grid/table and sharing actions |
 | `/properties/{id}` | Property detail and project |
-| `/projects` | Projects list |
+| `/projects` | Project catalog with filters, grid/table and export |
 | `/projects/{id}` | Project detail and properties |
 | `/agents` | Agents list |
 | `/agents/{id}` | Agent detail and assigned leads |
-| `/conversations` | Conversations list |
-| `/conversations/{id}` | Conversation detail and messages |
+| `/conversations` | Alias for the inbox |
+| `/conversations/{id}` | Alias for a selected inbox conversation |
 | `/messages` | Message log |
-| `/appointments` | Appointments list |
-| `/follow-ups` | Follow-ups list |
+| `/appointments` | Appointment agenda and week calendar workbench |
+| `/follow-ups` | Follow-up task buckets with due, snooze and reschedule actions |
 | `/activities` | Activity log |
 | `/interested-leads` | Interested leads list |
 | `/message-templates` | Message templates list |
+| `/settings` | Workspace, WhatsApp, automation, team and billing settings |
 
-Routing uses URL hashes, so links look like `#/leads`.
+Routing uses the History API, so links look like `/leads`. Static hosts must
+serve `index.html` for unknown paths.
+
+See [frontend/FEATURES.md](frontend/FEATURES.md) for a detailed feature tour,
+data-flow notes and current limitations.
 
 ## Project layout
 
@@ -141,11 +154,16 @@ Frontend environment variables:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `VITE_API_URL` | `http://localhost:8080` | Backend base URL |
+| `VITE_SUPABASE_URL` | none | Supabase project URL for Auth |
+| `VITE_SUPABASE_ANON_KEY` | none | Supabase anon/publishable key for Auth |
 
 ## Notes
 
 - The database has RLS enabled with no policies, so anon/publishable keys
   cannot read these tables. The backend therefore requires the `service_role`
   key.
+- The backend is still read-only. Status changes, notes, follow-ups and sent
+  messages in the UI are stored locally in the browser until the write API is
+  connected. Automation execution remains in n8n.
 - `backend/.env`, `backend/target`, `frontend/node_modules` and `frontend/dist`
   are ignored by git.
