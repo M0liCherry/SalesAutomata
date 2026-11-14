@@ -32,12 +32,19 @@ the browser.
 
 ## Run
 
+First create the single shared env file at the repo root:
+
+```bash
+cp .env.example .env
+# edit .env and set SUPABASE_SERVICE_ROLE_KEY
+```
+
+Both the backend and the Vite frontend read this one file.
+
 ### 1. Backend
 
 ```bash
 cd backend
-cp .env.example .env
-# edit .env and set SUPABASE_SERVICE_ROLE_KEY
 cargo run
 ```
 
@@ -53,12 +60,10 @@ npm run dev
 
 Frontend: http://localhost:5173
 
-The frontend defaults to `http://localhost:8080` for the API. Override it with
-`VITE_API_URL` if the backend runs elsewhere.
-
-Copy `frontend/.env.example` to `frontend/.env` and set the Supabase Auth values
-to enable the login screen. If they are missing, the app starts in demo mode
-without a login gate so the UI can still be reviewed.
+The frontend defaults to `http://localhost:8080` for the API and loads its
+Auth values (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`) from the same
+repo-root `.env`. If they are missing, the app starts in demo mode without a
+login gate so the UI can still be reviewed.
 
 ## Backend API
 
@@ -140,22 +145,35 @@ frontend/
 
 ## Configuration
 
-Backend environment variables (`backend/.env`):
+Environment variables (single `.env` at the repo root):
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | required (backend) | Server-side key that bypasses RLS |
 | `SUPABASE_URL` | project URL | Supabase project |
-| `SUPABASE_SERVICE_ROLE_KEY` | required | Server-side key that bypasses RLS |
-| `PORT` | `8080` | HTTP port |
+| `PORT` | `8080` | Backend HTTP port |
 | `CORS_ORIGIN` | `*` | Allowed origins, comma-separated |
-
-Frontend environment variables:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
 | `VITE_API_URL` | `http://localhost:8080` | Backend base URL |
 | `VITE_SUPABASE_URL` | none | Supabase project URL for Auth |
 | `VITE_SUPABASE_ANON_KEY` | none | Supabase anon/publishable key for Auth |
+| `VITE_CRM_SEND_WEBHOOK_URL` | none | n8n webhook used to send agent messages |
+
+## Deploy
+
+### Backend (Render)
+
+`render.yaml` is a Render Blueprint. Dashboard → New → Blueprint → select the
+repo → set `SUPABASE_SERVICE_ROLE_KEY` when prompted → Render builds
+`cargo build --release` and serves the API. Note the public URL it assigns.
+
+### Frontend (Vercel)
+
+Dashboard → Add New → Project → import the repo → set **Root Directory** to
+`frontend/` → Framework auto-detects Vite → set the environment variables from
+`.env.example` (at minimum `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+`VITE_API_URL` = your Render URL, and `VITE_CRM_SEND_WEBHOOK_URL`) → Deploy.
+`frontend/vercel.json` rewrites all routes into `index.html` for client-side
+routing.
 
 ## Notes
 
@@ -165,5 +183,5 @@ Frontend environment variables:
 - The backend is still read-only. Status changes, notes, follow-ups and sent
   messages in the UI are stored locally in the browser until the write API is
   connected. Automation execution remains in n8n.
-- `backend/.env`, `backend/target`, `frontend/node_modules` and `frontend/dist`
-  are ignored by git.
+- The backend resolves writes with the `service_role` key. The frontend is deployed on Vercel and the backend on Render; both are configured with the same variable names in each platform's dashboard, so no `.env` file needs to be committed or deployed.
+- `backend/target`, `frontend/node_modules`, `frontend/dist` and the root `.env` are ignored by git.

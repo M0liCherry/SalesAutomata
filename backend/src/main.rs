@@ -16,6 +16,8 @@ use tracing_subscriber::EnvFilter;
 // hello >:) best of luck reading the code
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load the single repo-root .env regardless of the current working directory.
+    dotenvy::from_path(concat!(env!("CARGO_MANIFEST_DIR"), "/../.env")).ok();
     dotenvy::dotenv().ok();
 
     tracing_subscriber::fmt()
