@@ -102,6 +102,7 @@ function ConversationThread({
   );
   const [paused, setPaused] = useState(() => isAiPaused(conversationId));
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [sending, setSending] = useState(false);
   const [showContact, setShowContact] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const templatesApi = useApi<ListResponse<MessageTemplate>>("/api/message-templates", {
@@ -131,16 +132,46 @@ function ConversationThread({
   const lead = data?.leads ?? leadMap.get(data?.lead_id ?? "");
   const effectivePaused = paused;
 
-  const send = () => {
-    if (!draft.trim() || !data) {
+  const send = async () => {
+    const text = draft.trim();
+    if (!text || !data) {
       return;
     }
-    addLocalMessage(conversationId, data.lead_id, draft.trim());
-    setLocalMessages(getLocalMessages(conversationId));
-    setDraft("");
-    setTemplatesOpen(false);
-    bump();
-    toast("Message queued locally. Connect the send API/n8n workflow to deliver it.", "warning");
+    const phone = data.leads?.phone;
+    if (!phone) {
+      toast("This lead has no phone number on file.", "danger");
+      return;
+    }
+    setSending(true);
+    try {
+      const webhookUrl = import.meta.env.VITE_CRM_SEND_WEBHOOK_URL as
+        | string
+        | undefined;
+      if (!webhookUrl) {
+        throw new Error("VITE_CRM_SEND_WEBHOOK_URL is not set in .env");
+      }
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, text }),
+      });
+      if (!response.ok) {
+        throw new Error(`send webhook returned ${response.status}`);
+      }
+      addLocalMessage(conversationId, data.lead_id, text, "agent");
+      setLocalMessages(getLocalMessages(conversationId));
+      setDraft("");
+      setTemplatesOpen(false);
+      bump();
+      toast("Message sent", "success");
+    } catch (error) {
+      toast(
+        `Failed to send: ${error instanceof Error ? error.message : "unknown error"}`,
+        "danger",
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   const toggleAi = (nextPaused: boolean) => {
@@ -358,7 +389,7 @@ function ConversationThread({
             placeholder={`Reply to ${lead?.name ?? "lead"}...`}
             rows={2}
           />
-          <button type="button" className="button button--primary" onClick={send} disabled={!draft.trim()}>
+          <button type="button" className="button button--primary" onClick={() => void send()} disabled={!draft.trim() || sending}>
             <Icon name="send" size={15} /> Send
           </button>
         </div>

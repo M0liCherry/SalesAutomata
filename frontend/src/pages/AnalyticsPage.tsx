@@ -9,7 +9,6 @@ import { ErrorMessage, Loading } from "../components/Status";
 import { formatMoney } from "../format";
 import { useApi } from "../hooks/useApi";
 import {
-  downloadCsv,
   isOverdue,
   PIPELINE_STAGES,
   titleCase,
@@ -169,24 +168,6 @@ export function AnalyticsPage() {
       const count = counts.get(stage.value) ?? 0;
       return { ...stage, count, width: Math.round((count / max) * 100) };
     });
-  }, [filteredLeads]);
-
-  const sourceRows = useMemo(() => {
-    const map = new Map<string, { leads: number; qualified: number; won: number }>();
-    for (const lead of filteredLeads) {
-      const entry = map.get(lead.source) ?? { leads: 0, qualified: 0, won: 0 };
-      entry.leads += 1;
-      if (lead.status === "qualified") {
-        entry.qualified += 1;
-      }
-      if (lead.status === "won") {
-        entry.won += 1;
-      }
-      map.set(lead.source, entry);
-    }
-    return [...map.entries()]
-      .map(([source, row]) => ({ source, ...row }))
-      .sort((left, right) => right.leads - left.leads || right.won - left.won);
   }, [filteredLeads]);
 
   const cityRows = useMemo(() => {
@@ -360,20 +341,6 @@ export function AnalyticsPage() {
     void appointmentsApi.reload();
     void followUpsApi.reload();
     void conversationsApi.reload();
-  };
-
-  const exportSources = () => {
-    downloadCsv(
-      `analytics-sources-${range}-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Source", "Leads", "Qualified", "Won", "Conversion"],
-      sourceRows.map((row) => [
-        row.source,
-        row.leads,
-        row.qualified,
-        row.won,
-        rate(row.won, row.leads),
-      ]),
-    );
   };
 
   return (
@@ -686,59 +653,6 @@ export function AnalyticsPage() {
           ) : null}
         </section>
       </div>
-
-      <section className="card">
-        <header className="card__header">
-          <div>
-            <h2>Source performance</h2>
-            <p>Lead volume, qualification and wins by acquisition channel.</p>
-          </div>
-          <button
-            type="button"
-            className="button button--ghost"
-            onClick={exportSources}
-            disabled={sourceRows.length === 0 || !leadsReady}
-          >
-            <Icon name="download" size={15} /> Export CSV
-          </button>
-        </header>
-        <SectionStatus
-          loading={leadsApi.loading}
-          error={leadsApi.error}
-          empty={leadsReady && sourceRows.length === 0}
-          emptyTitle="No source data yet"
-          emptyDescription="Lead sources will be compared once enquiries are captured."
-          emptyIcon="activity"
-          loadingLabel="Loading source performance..."
-          onRetry={() => void leadsApi.reload()}
-        />
-        {leadsReady && sourceRows.length > 0 ? (
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Source</th>
-                  <th className="analytics-num">Leads</th>
-                  <th className="analytics-num">Qualified</th>
-                  <th className="analytics-num">Won</th>
-                  <th className="analytics-num">Conversion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sourceRows.map((row) => (
-                  <tr key={row.source}>
-                    <td>{titleCase(row.source)}</td>
-                    <td className="analytics-num">{row.leads}</td>
-                    <td className="analytics-num">{row.qualified}</td>
-                    <td className="analytics-num">{row.won}</td>
-                    <td className="analytics-num">{rate(row.won, row.leads)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </section>
 
       <div className="analytics-grid analytics-grid--two">
         <section className="card">

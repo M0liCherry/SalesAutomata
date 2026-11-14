@@ -11,7 +11,6 @@ import {
   downloadCsv,
   formatRelativeTime,
   initials,
-  LEAD_SOURCES,
   PIPELINE_STAGES,
   findStage,
   titleCase,
@@ -27,7 +26,6 @@ type View = "pipeline" | "list";
 interface Filters {
   search: string;
   status: string;
-  source: string;
   agent: string;
   min_score: string;
 }
@@ -35,7 +33,6 @@ interface Filters {
 const EMPTY_FILTERS: Filters = {
   search: "",
   status: "",
-  source: "",
   agent: "",
   min_score: "",
 };
@@ -52,7 +49,6 @@ export function LeadsPage() {
   const leadsApi = useApi<ListResponse<Lead>>("/api/leads", {
     search: applied.search,
     status: applied.status,
-    source: applied.source,
     assigned_agent_id: applied.agent,
     min_score: applied.min_score,
     limit: 200,
@@ -221,20 +217,6 @@ export function LeadsPage() {
               {PIPELINE_STAGES.map((stage) => (
                 <option key={stage.value} value={stage.value}>
                   {stage.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field field--inline">
-            <span className="sr-only">Source</span>
-            <select
-              value={draft.source}
-              onChange={(event) => setDraft({ ...draft, source: event.target.value })}
-            >
-              <option value="">All sources</option>
-              {LEAD_SOURCES.map((source) => (
-                <option key={source} value={source}>
-                  {titleCase(source)}
                 </option>
               ))}
             </select>

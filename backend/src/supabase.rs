@@ -69,6 +69,46 @@ impl Supabase {
         Ok(count.unwrap_or(0))
     }
 
+    pub async fn insert(&self, table: &str, payload: &Value) -> Result<Value, AppError> {
+        let response = self
+            .authed(
+                self.http
+                    .post(self.endpoint(table))
+                    .header("Content-Type", "application/json")
+                    .header("Prefer", "return=representation")
+                    .json(payload),
+            )
+            .send()
+            .await
+            .map_err(network_error)?;
+
+        decode(response).await
+    }
+
+    pub async fn update(
+        &self,
+        table: &str,
+        id: &str,
+        payload: &Value,
+    ) -> Result<Value, AppError> {
+        let params = [("id".to_string(), format!("eq.{id}"))];
+
+        let response = self
+            .authed(
+                self.http
+                    .patch(self.endpoint(table))
+                    .query(&params)
+                    .header("Content-Type", "application/json")
+                    .header("Prefer", "return=representation")
+                    .json(payload),
+            )
+            .send()
+            .await
+            .map_err(network_error)?;
+
+        decode(response).await
+    }
+
     pub async fn health(&self) -> Result<(), AppError> {
         let params = [
             ("select".to_string(), "id".to_string()),

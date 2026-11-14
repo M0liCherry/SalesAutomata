@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+﻿use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +184,80 @@ pub struct MessageTemplate {
     pub content: String,
     pub is_active: bool,
     pub created_at: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PropertyPayload {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub property_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub listing_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price_per_sqft: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bedrooms: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bathrooms: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub balconies: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub area_sqft: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub floor: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_floors: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub furnishing: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub facing: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parking: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub availability: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub locality: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub features: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub images: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ProjectPayload {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub developer: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub locality: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub possession_date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amenities: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

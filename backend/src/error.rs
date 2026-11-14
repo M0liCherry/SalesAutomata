@@ -11,6 +11,8 @@ pub enum AppError {
     Upstream(String),
     #[error("not found")]
     NotFound,
+    #[error("bad request: {0}")]
+    BadRequest(String),
     #[error(transparent)]
     Serialization(#[from] serde_json::Error),
 }
@@ -20,6 +22,7 @@ impl IntoResponse for AppError {
         let status = match &self {
             AppError::Upstream(_) => StatusCode::BAD_GATEWAY,
             AppError::NotFound => StatusCode::NOT_FOUND,
+            AppError::BadRequest(_) => StatusCode::BAD_REQUEST,
             AppError::Serialization(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 

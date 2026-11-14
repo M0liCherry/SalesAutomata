@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::{
     error::AppError,
-    models::{ListResponse, Project, ProjectDetail},
+    models::{ListResponse, Project, ProjectDetail, ProjectPayload},
     query,
     state::AppState,
 };
@@ -50,6 +50,64 @@ pub async fn list(
         limit,
         offset,
     }))
+}
+
+pub async fn create(
+    State(state): State<AppState>,
+    Json(payload): Json<ProjectPayload>,
+) -> Result<Json<Project>, AppError> {
+    if payload
+        .name
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .is_none()
+    {
+        return Err(AppError::BadRequest("name is required".to_string()));
+    }
+    if payload
+        .project_type
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .is_none()
+    {
+        return Err(AppError::BadRequest(
+            "project_type is required".to_string(),
+        ));
+    }
+    if payload
+        .city
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .is_none()
+    {
+        return Err(AppError::BadRequest("city is required".to_string()));
+    }
+
+    let body = serde_json::to_value(&payload)?;
+    let value = state.supabase.insert("projects", &body).await?;
+    let mut items: Vec<Project> = serde_json::from_value(value)?;
+    items
+        .pop()
+        .map(Json)
+        .ok_or_else(|| AppError::Upstream("insert returned no rows".to_string()))
+}
+
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<ProjectPayload>,
+) -> Result<Json<Project>, AppError> {
+    let body = serde_json::to_value(&payload)?;
+    if body.as_object().map(|map| map.is_empty()).unwrap_or(false) {
+        return Err(AppError::BadRequest("nothing to update".to_string()));
+    }
+
+    let value = state.supabase.update("projects", &id, &body).await?;
+    let mut items: Vec<Project> = serde_json::from_value(value)?;
+    items.pop().map(Json).ok_or(AppError::NotFound)
 }
 
 pub async fn get_one(

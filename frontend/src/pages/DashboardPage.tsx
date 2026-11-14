@@ -50,16 +50,6 @@ export function DashboardPage() {
   const unassigned = leadRows.filter((lead) => !lead.assigned_agent_id).length;
   const overdue = (followUps.data?.data ?? []).filter((item) => isOverdue(item.due_at));
 
-  const sources = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const lead of leadRows) {
-      counts.set(lead.source, (counts.get(lead.source) ?? 0) + 1);
-    }
-    return [...counts.entries()]
-      .sort((left, right) => right[1] - left[1])
-      .slice(0, 6);
-  }, [leadRows]);
-
   const funnel = useMemo(() => {
     const max = Math.max(1, stats?.leads.total ?? leadRows.length);
     return PIPELINE_STAGES.map((stage) => {
@@ -269,32 +259,6 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <section className="card">
-          <header className="card__header">
-            <div>
-              <h2>Lead sources</h2>
-              <p>Where recent enquiries come from.</p>
-            </div>
-          </header>
-          {sources.length === 0 ? (
-            <p className="muted">No source data yet.</p>
-          ) : (
-            <div className="source-list">
-              {sources.map(([source, count]) => {
-                const percent = Math.max(4, Math.round((count / Math.max(1, leadRows.length)) * 100));
-                return (
-                  <div className="source-row" key={source}>
-                    <span>{titleCase(source)}</span>
-                    <div className="source-row__track">
-                      <span style={{ width: `${percent}%` }} />
-                    </div>
-                    <strong>{count}</strong>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
       </div>
 
       <section className="card">

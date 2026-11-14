@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::{
     error::AppError,
-    models::{ListResponse, Property, PropertyDetail},
+    models::{ListResponse, Property, PropertyDetail, PropertyPayload},
     query,
     state::AppState,
 };
@@ -68,6 +68,59 @@ pub async fn list(
         limit,
         offset,
     }))
+}
+
+pub async fn create(
+    State(state): State<AppState>,
+    Json(payload): Json<PropertyPayload>,
+) -> Result<Json<Property>, AppError> {
+    let title = payload
+        .title
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| AppError::BadRequest("title is required".to_string()))?;
+    if payload.property_type.as_deref().unwrap_or("").trim().is_empty() {
+        return Err(AppError::BadRequest(
+            "property_type is required".to_string(),
+        ));
+    }
+    if payload.price.is_none() {
+        return Err(AppError::BadRequest("price is required".to_string()));
+    }
+    if payload
+        .city
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .is_none()
+    {
+        return Err(AppError::BadRequest("city is required".to_string()));
+    }
+    let _ = title;
+
+    let body = serde_json::to_value(&payload)?;
+    let value = state.supabase.insert("properties", &body).await?;
+    let mut items: Vec<Property> = serde_json::from_value(value)?;
+    items
+        .pop()
+        .map(Json)
+        .ok_or_else(|| AppError::Upstream("insert returned no rows".to_string()))
+}
+
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<PropertyPayload>,
+) -> Result<Json<Property>, AppError> {
+    let body = serde_json::to_value(&payload)?;
+    if body.as_object().map(|map| map.is_empty()).unwrap_or(false) {
+        return Err(AppError::BadRequest("nothing to update".to_string()));
+    }
+
+    let value = state.supabase.update("properties", &id, &body).await?;
+    let mut items: Vec<Property> = serde_json::from_value(value)?;
+    items.pop().map(Json).ok_or(AppError::NotFound)
 }
 
 pub async fn get_one(

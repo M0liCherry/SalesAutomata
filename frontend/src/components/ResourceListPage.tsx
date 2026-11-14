@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { useApi } from "../hooks/useApi";
 import type { ListResponse } from "../types";
@@ -17,6 +17,8 @@ interface ResourceListPageProps<T> {
   actions?: (row: T) => ReactNode;
   defaultParams?: Record<string, string | number | boolean>;
   pageSize?: number;
+  headerAction?: ReactNode;
+  refreshKey?: number | string;
 }
 
 export function ResourceListPage<T>({
@@ -29,6 +31,8 @@ export function ResourceListPage<T>({
   actions,
   defaultParams,
   pageSize = 25,
+  headerAction,
+  refreshKey,
 }: ResourceListPageProps<T>) {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [applied, setApplied] = useState<Record<string, string>>({});
@@ -43,6 +47,12 @@ export function ResourceListPage<T>({
     endpoint,
     params,
   );
+
+  useEffect(() => {
+    void reload();
+    // Reload on demand after create/edit actions; initial load is handled by useApi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   const apply = () => {
     setApplied({ ...draft });
@@ -70,11 +80,12 @@ export function ResourceListPage<T>({
         onReset={reset}
       />
 
-      <p>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {headerAction}
         <button type="button" onClick={() => void reload()} disabled={loading}>
           Refresh
         </button>
-      </p>
+      </div>
 
       {loading ? <Loading /> : null}
       {error ? (

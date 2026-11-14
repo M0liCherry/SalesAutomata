@@ -34,10 +34,16 @@ pub fn router(state: AppState, cors_origin: &str) -> Router {
         .route("/health", get(health))
         .route("/api/leads", get(leads::list))
         .route("/api/leads/{id}", get(leads::get_one))
-        .route("/api/properties", get(properties::list))
-        .route("/api/properties/{id}", get(properties::get_one))
-        .route("/api/projects", get(projects::list))
-        .route("/api/projects/{id}", get(projects::get_one))
+        .route("/api/properties", get(properties::list).post(properties::create))
+        .route(
+            "/api/properties/{id}",
+            get(properties::get_one).patch(properties::update),
+        )
+        .route("/api/projects", get(projects::list).post(projects::create))
+        .route(
+            "/api/projects/{id}",
+            get(projects::get_one).patch(projects::update),
+        )
         .route("/api/agents", get(agents::list))
         .route("/api/agents/{id}", get(agents::get_one))
         .route("/api/conversations", get(conversations::list))
@@ -57,7 +63,7 @@ pub fn router(state: AppState, cors_origin: &str) -> Router {
 async fn index() -> impl IntoResponse {
     Json(json!({
         "service": "SalesAutomata backend",
-        "description": "Read-only JSON API over the Supabase project.",
+        "description": "JSON API over the Supabase project.",
         "endpoints": [
             "GET /health",
             "GET /api/dashboard/summary",
@@ -65,8 +71,12 @@ async fn index() -> impl IntoResponse {
             "GET /api/leads/{id}",
             "GET /api/properties?city=&property_type=&listing_type=&min_price=&max_price=&bedrooms=&availability=&status=&project_id=&search=&limit=&offset=",
             "GET /api/properties/{id}",
+            "POST /api/properties",
+            "PATCH /api/properties/{id}",
             "GET /api/projects?city=&status=&project_type=&search=&limit=&offset=",
             "GET /api/projects/{id}",
+            "POST /api/projects",
+            "PATCH /api/projects/{id}",
             "GET /api/agents?is_active=&search=&limit=&offset=",
             "GET /api/agents/{id}",
             "GET /api/conversations?lead_id=&status=&channel=&limit=&offset=",
@@ -100,7 +110,7 @@ async fn health(axum::extract::State(state): axum::extract::State<AppState>) -> 
 
 fn build_cors(origin: &str) -> CorsLayer {
     let layer = CorsLayer::new()
-        .allow_methods([Method::GET, Method::OPTIONS])
+        .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::OPTIONS])
         .allow_headers([CONTENT_TYPE, AUTHORIZATION]);
 
     if origin.trim() == "*" {

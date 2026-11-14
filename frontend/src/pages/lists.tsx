@@ -1,4 +1,9 @@
 import { ResourceListPage } from "../components/ResourceListPage";
+import { useState } from "react";
+
+import { Icon } from "../components/Icon";
+import { PropertyFormModal } from "../components/PropertyFormModal";
+import { ProjectFormModal } from "../components/ProjectFormModal";
 import type { Column } from "../components/DataTable";
 import type { FilterField } from "../components/FilterBar";
 import { formatDate, formatMoney, shortId, text } from "../format";
@@ -175,20 +180,61 @@ const propertyColumns: Column<Property>[] = [
 ];
 
 export function PropertiesPage() {
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<Property | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   return (
-    <ResourceListPage<Property>
-      title="Properties"
-      description="Listings available to match against leads."
-      endpoint="/api/properties"
-      fields={propertyFields}
-      columns={propertyColumns}
-      getKey={(row) => row.id}
-      actions={(row) => (
-        <button type="button" onClick={() => navigate(`/properties/${row.id}`)}>
-          View
-        </button>
-      )}
-    />
+    <>
+      <ResourceListPage<Property>
+        title="Properties"
+        description="Listings available to match against leads."
+        endpoint="/api/properties"
+        fields={propertyFields}
+        columns={propertyColumns}
+        getKey={(row) => row.id}
+        headerAction={
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Icon name="plus" size={15} /> Add property
+          </button>
+        }
+        refreshKey={refreshKey}
+        actions={(row) => (
+          <>
+            <button type="button" onClick={() => setEditing(row)}>
+              Edit
+            </button>{" "}
+            <button type="button" onClick={() => navigate(`/properties/${row.id}`)}>
+              View
+            </button>
+          </>
+        )}
+      />
+      {createOpen ? (
+        <PropertyFormModal
+          initial={null}
+          onClose={() => setCreateOpen(false)}
+          onSaved={() => {
+            setCreateOpen(false);
+            setRefreshKey((value) => value + 1);
+          }}
+        />
+      ) : null}
+      {editing ? (
+        <PropertyFormModal
+          initial={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            setRefreshKey((value) => value + 1);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -209,20 +255,61 @@ const projectColumns: Column<Project>[] = [
 ];
 
 export function ProjectsPage() {
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   return (
-    <ResourceListPage<Project>
-      title="Projects"
-      description="Developments that group multiple properties."
-      endpoint="/api/projects"
-      fields={projectFields}
-      columns={projectColumns}
-      getKey={(row) => row.id}
-      actions={(row) => (
-        <button type="button" onClick={() => navigate(`/projects/${row.id}`)}>
-          View
-        </button>
-      )}
-    />
+    <>
+      <ResourceListPage<Project>
+        title="Projects"
+        description="Developments that group multiple properties."
+        endpoint="/api/projects"
+        fields={projectFields}
+        columns={projectColumns}
+        getKey={(row) => row.id}
+        headerAction={
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Icon name="plus" size={15} /> Add project
+          </button>
+        }
+        refreshKey={refreshKey}
+        actions={(row) => (
+          <>
+            <button type="button" onClick={() => setEditing(row)}>
+              Edit
+            </button>{" "}
+            <button type="button" onClick={() => navigate(`/projects/${row.id}`)}>
+              View
+            </button>
+          </>
+        )}
+      />
+      {createOpen ? (
+        <ProjectFormModal
+          initial={null}
+          onClose={() => setCreateOpen(false)}
+          onSaved={() => {
+            setCreateOpen(false);
+            setRefreshKey((value) => value + 1);
+          }}
+        />
+      ) : null}
+      {editing ? (
+        <ProjectFormModal
+          initial={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            setRefreshKey((value) => value + 1);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -427,7 +514,6 @@ export function ActivitiesPage() {
 const interestedFields: FilterField[] = [
   { name: "search", label: "Search", placeholder: "name, phone, message" },
   { name: "status", label: "Status", type: "select", options: interestedStatuses },
-  { name: "source", label: "Source", type: "select", options: leadSources },
   { name: "city", label: "City", placeholder: "preferred city" },
 ];
 
