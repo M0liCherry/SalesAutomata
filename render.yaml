@@ -1,0 +1,20 @@
+# Render Blueprint — deploy the Rust backend as a free web service.
+# Render Dashboard → New → Blueprint → select this repo → apply.
+services:
+  - type: web
+    name: salesautomata-backend
+    runtime: rust
+    plan: free
+    rootDir: backend
+    buildCommand: cargo build --release
+    startCommand: ./target/release/backend
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        value: https://iaydmzkytlksabwuylsl.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # set in the Render dashboard (Dashboard → Project Settings → API → service_role / sb_secret_…)
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: RUST_LOG
+        value: backend=info,tower_http=info
